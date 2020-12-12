@@ -1,0 +1,123 @@
+<html>
+<head>
+<style>
+div#video_player_box{ width:550px; background:#000; margin:0px auto;}
+div#video_controls_bar{ background: #333; padding:10px; color:#CCC;}
+input#seekslider{ width:180px; }
+input#volumeslider{ width: 80px;}
+</style>
+<link rel="stylesheet" href="./fa/css/fontawesome.min.css">
+<script>
+var vid, playbtn, seekslider, curtimetext, durtimetext, mutebtn, volumeslider, fullscreenbtn;
+function intializePlayer(){
+	// Set object references
+	vid = document.getElementById("my_video");
+	playbtn = document.getElementById("playpausebtn");
+	seekslider = document.getElementById("seekslider");
+	curtimetext = document.getElementById("curtimetext");
+	durtimetext = document.getElementById("durtimetext");
+	mutebtn = document.getElementById("mutebtn");
+	volumeslider = document.getElementById("volumeslider");
+	fullscreenbtn = document.getElementById("fullscreenbtn");
+	// Add event listeners
+	playbtn.addEventListener("click",playPause,false);
+	seekslider.addEventListener("change",vidSeek,false);
+	vid.addEventListener("timeupdate",seektimeupdate,false);
+	mutebtn.addEventListener("click",vidmute,false);
+	volumeslider.addEventListener("change",setvolume,false);
+	fullscreenbtn.addEventListener("click",toggleFullScreen,false);
+}
+window.onload = intializePlayer;
+function playPause(){
+	if(vid.paused){
+		vid.play();
+		playbtn.innerHTML = "<i class='fa fa-pause'></i>";
+	} else {
+		vid.pause();
+		playbtn.innerHTML = "<i class='fa fa-play'></i>";
+	}
+}
+function vidSeek(){
+	var seekto = vid.duration * (seekslider.value / 100);
+	vid.currentTime = seekto;
+}
+function seektimeupdate(){
+	var nt = vid.currentTime * (100 / vid.duration);
+	seekslider.value = nt;
+	var curmins = Math.floor(vid.currentTime / 60);
+	var cursecs = Math.floor(vid.currentTime - curmins * 60);
+	var durmins = Math.floor(vid.duration / 60);
+	var dursecs = Math.floor(vid.duration - durmins * 60);
+	if(cursecs < 10){ cursecs = "0"+cursecs; }
+	if(dursecs < 10){ dursecs = "0"+dursecs; }
+	if(curmins < 10){ curmins = "0"+curmins; }
+	if(durmins < 10){ durmins = "0"+durmins; }
+	curtimetext.innerHTML = curmins+":"+cursecs;
+	durtimetext.innerHTML = durmins+":"+dursecs;
+}
+function vidmute(){
+	if(vid.muted){
+		vid.muted = false;
+		mutebtn.innerHTML = "<i class='fa fa-volume-up'></i>";
+	} else {
+		vid.muted = true;
+		mutebtn.innerHTML = "<i class='fa fa-volume-off'></i>";
+	}
+}
+function setvolume(){
+	vid.volume = volumeslider.value / 100;
+}
+function toggleFullScreen(){
+	if(vid.requestFullScreen){
+		vid.requestFullScreen();
+	} else if(vid.webkitRequestFullScreen){
+		vid.webkitRequestFullScreen();
+	} else if(vid.mozRequestFullScreen){
+		vid.mozRequestFullScreen();
+	}
+}
+</script>
+
+<script src="hls.js"></script>
+</head>
+<body>
+<div id="video_player_box">
+  <video id="my_video" width="550" height="310" autoplay></video>
+  <div id="video_controls_bar">
+    <button id="playpausebtn"><i class="fa fa-play"></i></button>
+    <input id="seekslider" type="range" min="0" max="100" value="0" step="1">
+    <span id="curtimetext">00:00</span> / <span id="durtimetext">00:00</span>
+    <button id="mutebtn"><i class='fa fa-volume-up'></i></button>
+    <input id="volumeslider" type="range" min="0" max="100" value="100" step="1">
+    <button id="fullscreenbtn"><i class="fa fa-arrows-alt"></i></button>
+  </div>
+</div>
+
+
+
+
+
+<script>
+  var video = document.getElementById('my_video');
+  if(Hls.isSupported()) {
+    var hls = new Hls();
+    hls.loadSource('../hls/stream.m3u8');
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED,function() {
+      video.play();
+  });
+ }
+ // hls.js is not supported on platforms that do not have Media Source Extensions (MSE) enabled.
+ // When the browser has built-in HLS support (check using `canPlayType`), we can provide an HLS manifest (i.e. .m3u8 URL) directly to the video element throught the `src` property.
+ // This is using the built-in support of the plain video element, without using hls.js.
+ // Note: it would be more normal to wait on the 'canplay' event below however on Safari (where you are most likely to find built-in HLS support) the video.src URL must be on the user-driven
+ // white-list before a 'canplay' event will be emitted; the last video event that can be reliably listened-for when the URL is not on the white-list is 'loadedmetadata'.
+  else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = '../hls/stream.m3u8';
+    video.addEventListener('loadedmetadata',function() {
+      video.play();
+    });
+  }
+</script>
+</body>
+</html>
